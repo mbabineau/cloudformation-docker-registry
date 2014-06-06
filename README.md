@@ -2,6 +2,7 @@ CloudFormation template for an S3-backed private [Docker Registry](https://githu
 
 Prerequisites:
 * Route 53 hosted zone for the desired registry address (e.g., `mycompany.com` for `docker.mycompany.com`)
+* Trusted SSL certificate for this address (self-signed certs are [not supported](https://github.com/dotcloud/docker/pull/2687) by docker unless added to the system keystore)
 
 ## Overview
 
@@ -32,10 +33,10 @@ This is a VPC security group containing access rules for cluster administration,
 Inbound rules are at your discretion, but you may want to include access to:
 * `22 [tcp]` - SSH port
 * `80 [tcp]` - Private nginx proxy port (troubleshooting only)
-* `5000 [tcp]` - Private docker port (troubleshooting only)
+* `5000 [tcp]` - Private registry port (troubleshooting only)
 
 ### 3. Upload an SSL certificate
-Upload an SSL certificate to IAM ([instructions](http://docs.aws.amazon.com/IAM/latest/UserGuide/InstallCert.html)). This certificate should be valid for the registry DNS address (Docker requires the use of valid certs). 
+Upload an SSL certificate to IAM ([instructions](http://docs.aws.amazon.com/IAM/latest/UserGuide/InstallCert.html)). This certificate must be valid for the registry DNS address and be trusted by the clients (if self-signed, you must add it to the clients' keystores).
 
 Once uploaded, you'll need the ARN for this certificate. You can do this via [aws-cli](https://github.com/aws/aws-cli):
 ```console
@@ -88,7 +89,7 @@ $ curl -u <user>:<password> https://docker.mycompany.com
 "docker-registry server (prod) (v0.8.0)"
 ```
 
-To use the new registry with docker, just generate a new `~/.dockercfg` by hand ([details](http://docs.docker.io/use/workingwithrepository/#authentication-file)) or via `docker login`:
+To use the new registry, just generate a new `~/.dockercfg` by hand ([details](http://docs.docker.io/use/workingwithrepository/#authentication-file)) or via `docker login`:
 ```console
 $ docker login docker.mycompany.com
 Username: admin
