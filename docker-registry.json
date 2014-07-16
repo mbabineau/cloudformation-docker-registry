@@ -168,7 +168,9 @@
                   "    s3_region: {{s3_region}}",
                   "    boto_bucket: {{s3_bucket}}",
                   "    storage_path: /srv/docker",
-                  "    secret_key: {{magic_string}}"
+                  "    secret_key: {{magic_string}}",
+                  "    standalone: true",
+                  "    disable_token_auth: true"
                 ]]},
                 "context" : {
                   "access_key"  : { "Ref" : "HostKeys" },
