@@ -62,10 +62,6 @@
       "Description" : "This name will be shown in the AWS console for each launched instance",
       "Type" : "String",
       "Default" : "DockerRegistry"
-    },
-    "S3Region": {
-      "Description" : "Region of the S3 bucket",
-      "Type" : "String"
     }
   },
 
@@ -165,7 +161,6 @@
                   "    s3_access_key: {{access_key}}",
                   "    s3_secret_key: {{secret_key}}",
                   "    s3_bucket: {{s3_bucket}}",
-                  "    s3_region: {{s3_region}}",
                   "    boto_bucket: {{s3_bucket}}",
                   "    storage_path: /srv/docker",
                   "    secret_key: {{magic_string}}",
@@ -176,7 +171,6 @@
                   "access_key"  : { "Ref" : "HostKeys" },
                   "secret_key"  : { "Fn::GetAtt" : ["HostKeys", "SecretAccessKey"]},
                   "s3_bucket"   : { "Ref" : "S3Bucket"},
-                  "s3_region"   : { "Ref" : "S3Region"},
                   "magic_string": "fL3YHeP1cmCHH5FWm1PKaO7cdo0VXkabAgiSEestXYZDgAiQcDCsTiWpOaukB1e9"
                 },
                 "mode"    : "000700",
