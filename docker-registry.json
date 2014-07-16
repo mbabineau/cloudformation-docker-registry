@@ -52,7 +52,16 @@
     },
     "AdminSecurityGroup" : {
       "Description" : "Existing security group that should be granted administrative access (e.g., 'sg-123456')",
-      "Type": "String"
+      "Type" : "String"
+    },
+    "AvailabilityZonesConfig": {
+      "Description" : "Specify the availability zones",
+      "Type" : "CommaDelimitedList"
+    },
+    "InstanceName": {
+      "Description" : "This name will be shown in the AWS console for each launched instance",
+      "Type" : "String",
+      "Default" : "DockerRegistry"
     }
   },
 
@@ -123,13 +132,18 @@
     "ServerGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
-        "AvailabilityZones" : { "Fn::GetAZs" : "" },
+        "AvailabilityZones" : { "Ref" : "AvailabilityZonesConfig"},
         "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "1",
         "DesiredCapacity" : "1",
         "LoadBalancerNames" : [ { "Ref" : "ElasticLoadBalancer" } ],
-        "VPCZoneIdentifier" : { "Ref" : "Subnets" }
+        "VPCZoneIdentifier" : { "Ref" : "Subnets" },
+        "Tags" : [{
+          "Key" : "Name",
+          "Value" : {"Ref": "InstanceName"},
+          "PropagateAtLaunch" : true
+        }]
       }
     },
 
@@ -222,6 +236,9 @@
           "    --access-key ",  { "Ref" : "HostKeys" },
           "    --secret-key ", { "Fn::GetAtt": ["HostKeys", "SecretAccessKey"] },
           "    --region ", { "Ref" : "AWS::Region" }, " || error_exit 'Failed to run cfn-init'\n",
+
+          "# make sure the package repository is up to date\n",
+          "apt-get update\n",
 
           "# Set up nginx proxy\n",
           "apt-get -y install nginx\n",
