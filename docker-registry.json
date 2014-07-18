@@ -39,7 +39,7 @@
       "Type" : "String"
     },
     "Subnets" : {
-      "Description" : "List of VPC subnet IDs for the cluster",
+      "Description" : "List of VPC subnet IDs for the cluster. Note: must match the passed AvailabilityZones.",
       "Type" : "CommaDelimitedList"
     },  
     "VpcId" : {
@@ -54,10 +54,15 @@
       "Description" : "Existing security group that should be granted administrative access (e.g., 'sg-123456')",
       "Type" : "String"
     },
-    "AvailabilityZonesConfig": {
-      "Description" : "Specify the availability zones",
-      "Type" : "CommaDelimitedList"
+    "AvailabilityZones": {
+      "Description" : "(Optional) If passed, only launch Docker Registry nodes in these AZs (e.g., 'us-east-1a,us-east-1b'). Note: these must match the passed Subnets.",
+      "Type" : "CommaDelimitedList",
+      "Default" : ""
     }
+  },
+
+  "Conditions" : {
+    "UseAllAvailabilityZones" : {"Fn::Equals" : [{ "Fn::Join" : ["", {"Ref" : "AvailabilityZones"} ]}, ""]}
   },
 
   "Mappings" : {
@@ -127,7 +132,13 @@
     "ServerGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
-        "AvailabilityZones" : { "Ref" : "AvailabilityZonesConfig"},
+        "AvailabilityZones" : {
+          "Fn::If" : [
+            "UseAllAvailabilityZones",
+            { "Fn::GetAZs": "" },
+            {"Ref" : "AvailabilityZones"}
+          ]
+        },
         "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "1",
