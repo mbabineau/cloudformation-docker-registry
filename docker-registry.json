@@ -149,7 +149,10 @@
                   "    s3_bucket: {{s3_bucket}}",
                   "    boto_bucket: {{s3_bucket}}",
                   "    storage_path: /srv/docker",
-                  "    secret_key: {{magic_string}}"
+                  "    secret_key: {{magic_string}}",
+                  "    search_backend: sqlalchemy",
+                  "    sqlalchemy_index_database: sqlite:////tmp/docker-registry.db",
+                  ""
                 ]]},
                 "context" : {
                   "access_key"  : { "Ref" : "HostKeys" },
