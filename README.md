@@ -71,6 +71,7 @@ Example using `aws-cli`:
 aws cloudformation create-stack \
     --template-body file://docker-registry.json \
     --stack-name <stack> \
+    --capabilities CAPABILITY_IAM \
     --parameters \
         ParameterKey=KeyName,ParameterValue=<key> \
         ParameterKey=RegistryAuth,ParameterValue='<auth_string_1>,<auth_string_2>' \
