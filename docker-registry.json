@@ -165,7 +165,10 @@
                   "    storage_path: /srv/docker",
                   "    secret_key: {{magic_string}}",
                   "    standalone: true",
-                  "    disable_token_auth: true"
+                  "    disable_token_auth: true",
+                  "    search_backend: sqlalchemy",
+                  "    sqlalchemy_index_database: sqlite:////tmp/docker-registry.db",
+                  ""
                 ]]},
                 "context" : {
                   "access_key"  : { "Ref" : "HostKeys" },
