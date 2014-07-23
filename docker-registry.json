@@ -52,7 +52,11 @@
     },
     "AdminSecurityGroup" : {
       "Description" : "Existing security group that should be granted administrative access (e.g., 'sg-123456')",
-      "Type": "String"
+      "Type" : "String"
+    },
+    "AvailabilityZonesConfig": {
+      "Description" : "Specify the availability zones",
+      "Type" : "CommaDelimitedList"
     }
   },
 
@@ -123,7 +127,7 @@
     "ServerGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
-        "AvailabilityZones" : { "Fn::GetAZs" : "" },
+        "AvailabilityZones" : { "Ref" : "AvailabilityZonesConfig"},
         "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "1",
@@ -150,6 +154,8 @@
                   "    boto_bucket: {{s3_bucket}}",
                   "    storage_path: /srv/docker",
                   "    secret_key: {{magic_string}}",
+                  "    standalone: true",
+                  "    disable_token_auth: true",
                   "    search_backend: sqlalchemy",
                   "    sqlalchemy_index_database: sqlite:////tmp/docker-registry.db",
                   ""
@@ -225,6 +231,9 @@
           "    --access-key ",  { "Ref" : "HostKeys" },
           "    --secret-key ", { "Fn::GetAtt": ["HostKeys", "SecretAccessKey"] },
           "    --region ", { "Ref" : "AWS::Region" }, " || error_exit 'Failed to run cfn-init'\n",
+
+          "# make sure the package repository is up to date\n",
+          "apt-get update\n",
 
           "# Set up nginx proxy\n",
           "apt-get -y install nginx\n",
