@@ -103,8 +103,13 @@
           "PolicyName" : "S3Access",
           "PolicyDocument" : {
             "Statement": [{
-              "Effect"   : "Allow",
               "Action"   : "s3:*",
+              "Effect"   : "Allow",
+              "Resource" : { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref" : "S3Bucket"} ]]}
+            },
+            {
+              "Action": "s3:*",
+              "Effect": "Allow",
               "Resource" : { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref" : "S3Bucket"} , "/*"]]}
             }]
           }
