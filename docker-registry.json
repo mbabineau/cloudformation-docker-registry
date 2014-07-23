@@ -57,11 +57,6 @@
     "AvailabilityZonesConfig": {
       "Description" : "Specify the availability zones",
       "Type" : "CommaDelimitedList"
-    },
-    "InstanceName": {
-      "Description" : "This name will be shown in the AWS console for each launched instance",
-      "Type" : "String",
-      "Default" : "DockerRegistry"
     }
   },
 
@@ -138,12 +133,7 @@
         "MaxSize" : "1",
         "DesiredCapacity" : "1",
         "LoadBalancerNames" : [ { "Ref" : "ElasticLoadBalancer" } ],
-        "VPCZoneIdentifier" : { "Ref" : "Subnets" },
-        "Tags" : [{
-          "Key" : "Name",
-          "Value" : {"Ref": "InstanceName"},
-          "PropagateAtLaunch" : true
-        }]
+        "VPCZoneIdentifier" : { "Ref" : "Subnets" }
       }
     },
 
