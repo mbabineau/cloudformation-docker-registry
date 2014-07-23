@@ -28,7 +28,7 @@
     "DockerImage" : {
       "Description" : "Path of the Docker Registry image to use (format: '[<registry>[:<port>]/]<repository>[:<version>]')",
       "Type" : "String",
-      "Default" : "samalba/docker-registry"
+      "Default" : "registry:0.7.3"
     },
     "S3Bucket" : {
       "Description" : "Bucket to use for Docker images (e.g., 'mycompany-docker')",
