@@ -41,7 +41,7 @@
     "Subnets" : {
       "Description" : "List of VPC subnet IDs for the cluster. Note: must match the passed AvailabilityZones.",
       "Type" : "CommaDelimitedList"
-    },  
+    },
     "VpcId" : {
       "Description" : "VPC associated with the provided subnets",
       "Type" : "String"
@@ -58,6 +58,11 @@
       "Description" : "(Optional) If passed, only launch Docker Registry nodes in these AZs (e.g., 'us-east-1a,us-east-1b'). Note: these must match the passed Subnets.",
       "Type" : "CommaDelimitedList",
       "Default" : ""
+    },
+    "HealthCheckGracePeriod": {
+      "Description": "The length of time in seconds after a new EC2 instance comes into service that Auto Scaling starts checking its health.",
+      "Type": "String",
+      "Default": "500"
     }
   },
 
@@ -137,6 +142,8 @@
     "ServerGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
+        "HealthCheckGracePeriod": { "Ref": "HealthCheckGracePeriod" },
+        "HealthCheckType": "ELB",
         "AvailabilityZones" : {
           "Fn::If" : [
             "UseAllAvailabilityZones",
@@ -280,7 +287,7 @@
       "Properties" : {
         "GroupDescription" : "Enable Registry access",
         "VpcId" : { "Ref" : "VpcId" },
-        "SecurityGroupIngress" : [ 
+        "SecurityGroupIngress" : [
           { "IpProtocol" : "tcp", "FromPort" : "443", "ToPort" : "443", "CidrIp" : "0.0.0.0/0" }
         ]
       }
@@ -291,7 +298,7 @@
       "Properties" : {
         "GroupDescription" : "Enable SSH and Registry access",
         "VpcId" : { "Ref" : "VpcId" },
-        "SecurityGroupIngress" : [ 
+        "SecurityGroupIngress" : [
           { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "SourceSecurityGroupId" : { "Ref" : "LbSecurityGroup"} }
         ]
       }
@@ -325,9 +332,11 @@
         "HostedZoneName" : { "Fn::Join" : [ "", [{"Ref" : "DnsZone"}, "." ]]},
         "Comment" : "Docker Registry",
         "Name" : { "Fn::Join" : [ "", [{"Ref" : "DnsPrefix"}, ".", {"Ref" : "DnsZone"}, "."]]},
-        "Type" : "CNAME",
-        "TTL" : "900",
-        "ResourceRecords" : [ { "Fn::GetAtt" : [ "ElasticLoadBalancer", "DNSName" ] } ]
+        "Type" : "A",
+        "AliasTarget" : {
+          "HostedZoneId" : { "Fn::GetAtt" : [ "ElasticLoadBalancer", "CanonicalHostedZoneNameID" ]},
+          "DNSName" : { "Fn::GetAtt" : [ "ElasticLoadBalancer", "CanonicalHostedZoneName" ]}
+        }
       }
     },
 
