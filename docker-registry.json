@@ -216,7 +216,7 @@
                   "  }",
                   "",
                   "  location /health {",
-                  "    empty_gif;",
+                  "    proxy_pass http://docker-registry/v1/_ping;",
                   "  }",
                   "}"
                 ]]},
