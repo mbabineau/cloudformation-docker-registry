@@ -10,9 +10,9 @@ This template bootstraps a private Docker Registry.
 
 Registry servers are launched in an auto scaling group using public AMIs running Ubuntu 14.04 LTS and pre-reloaded with Docker and Runit.  If you wish to use your own image, simply modify `RegionMap` in the template file.
 
-The servers register with an Elastic Load Balancer, a CNAME for which is created in Route 53. When tagging repositories, use this (or a higher-level record) instead of the ELB's raw CNAME as your registry address instead (e.g., `docker.mycompany.com/myimage` instead of `mystack-do-ElasticL-AJK...elb.amazonaws.com/myimage`).
+The servers register with an Elastic Load Balancer, an Alias for which is created in Route 53. When tagging repositories, use this (or a higher-level record) instead of the ELB's raw DNS record as your registry address instead (e.g., `docker.mycompany.com/myimage` instead of `mystack-do-ElasticL-AJK...elb.amazonaws.com/myimage`).
 
-The ELB listens on HTTPS using the specified SSL cert. Each registry server is password-protected by an nginx proxy.
+The ELB listens on HTTPS using the specified SSL cert. Each registry server is password-protected by an nginx proxy. The ELB performs health checks against `/v1/_ping`. If an instance fails these health checks for several minutes, the ASG will terminate the instance and bring up a replacement.
 
 The registry is run via a Docker image specified as a Parameter. You can use the default or provide your own.
 
