@@ -271,7 +271,7 @@
 
           "# Set up docker registry\n",
           "docker pull ", { "Ref": "DockerImage" }, "\n",
-          "runit-service create docker-registry docker run",
+          "runit-service create docker-registry docker run --rm",
           "   -p 5000:5000",
           "   -v /opt/docker-registry:/registry-conf",
           "   -e DOCKER_REGISTRY_CONFIG=/registry-conf/config.yaml",
