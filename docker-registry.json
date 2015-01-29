@@ -17,13 +17,14 @@
       "Type" : "String"
     },
     "DnsPrefix" : {
-      "Description" : "Prefix for the registry's DNS record (<prefix>.<zone>)",
+      "Description" : "(Optional) Prefix for the registry's DNS record (<prefix>.<zone>)",
       "Type": "String",
-      "Default": "docker"
+      "Default": ""
     },
     "DnsZone" : {
-      "Description" : "Route53-hosted zone to use for the registry's DNS record (<prefix>.<zone>)",
-      "Type": "String"
+      "Description" : "(Optional) Route53-hosted zone to use for the registry's DNS record (<prefix>.<zone>)",
+      "Type": "String",
+      "Default": ""
     },
     "DockerImage" : {
       "Description" : "Path of the Docker Registry image to use (format: '[<registry>[:<port>]/]<repository>[:<version>]')",
@@ -67,7 +68,11 @@
   },
 
   "Conditions" : {
-    "UseAllAvailabilityZones" : {"Fn::Equals" : [{ "Fn::Join" : ["", {"Ref" : "AvailabilityZones"} ]}, ""]}
+    "UseAllAvailabilityZones" : {"Fn::Equals" : [{ "Fn::Join" : ["", {"Ref" : "AvailabilityZones"} ]}, ""]},
+    "CreateDnsEntry" : {"Fn::And": [
+      {"Fn:Not": [{"Fn::Equals" : [{"Ref" : "DnsPrefix"}, ""]}]},
+      {"Fn:Not": [{"Fn::Equals" : [{"Ref" : "DnsZone"}, ""]}]},
+    ]}
   },
 
   "Mappings" : {
@@ -328,6 +333,7 @@
 
     "DnsRecord" : {
       "Type" : "AWS::Route53::RecordSet",
+      "Condition": "CreateDnsEntry",
       "Properties" : {
         "HostedZoneName" : { "Fn::Join" : [ "", [{"Ref" : "DnsZone"}, "." ]]},
         "Comment" : "Docker Registry",
@@ -348,7 +354,11 @@
   "Outputs" : {
     "DnsAddress" : {
       "Description" : "Docker Registry",
-      "Value" :  { "Ref" : "DnsRecord" }
+      "Value" :  { "Fn::If" : [
+        "CreateDnsEntry",
+        { "Ref" : "DnsRecord" },
+        { "Fn::GetAtt" : [ "ElasticLoadBalancer", "DNSName" ]}
+      ]}
     }
   }
 }

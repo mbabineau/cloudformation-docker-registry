@@ -1,8 +1,8 @@
 CloudFormation template for an S3-backed private [Docker Registry](https://github.com/dotcloud/docker-registry) with password protection and HTTPS.
 
 Prerequisites:
-* Route 53 hosted zone for the desired registry address (e.g., `mycompany.com` for `docker.mycompany.com`)
 * Trusted SSL certificate for this address (self-signed certs are [not supported](https://github.com/dotcloud/docker/pull/2687) by docker unless added to the system keystore)
+* (Optional) Route 53 hosted zone for the desired registry address (e.g., `mycompany.com` for `docker.mycompany.com`)
 
 ## Overview
 
@@ -10,7 +10,7 @@ This template bootstraps a private Docker Registry.
 
 Registry servers are launched in an auto scaling group using public AMIs running Ubuntu 14.04 LTS and pre-reloaded with Docker and Runit.  If you wish to use your own image, simply modify `RegionMap` in the template file.
 
-The servers register with an Elastic Load Balancer, an Alias for which is created in Route 53. When tagging repositories, use this (or a higher-level record) instead of the ELB's raw DNS record as your registry address instead (e.g., `docker.mycompany.com/myimage` instead of `mystack-do-ElasticL-AJK...elb.amazonaws.com/myimage`).
+The servers register with an Elastic Load Balancer, an Alias for which is created in Route 53 (if you pass `DnsZone` and `DnsPrefix`). When tagging repositories, use this (or a higher-level record) instead of the ELB's raw DNS record as your registry address instead (e.g., `docker.mycompany.com/myimage` instead of `mystack-do-ElasticL-AJK...elb.amazonaws.com/myimage`).
 
 The ELB listens on HTTPS using the specified SSL cert. Each registry server is password-protected by an nginx proxy. The ELB performs health checks against `/v1/_ping`. If an instance fails these health checks for several minutes, the ASG will terminate the instance and bring up a replacement.
 
@@ -89,6 +89,7 @@ Once the stack has been provisioned, try calling the registry using credentials 
 $ curl -u <user>:<password> https://docker.mycompany.com
 "docker-registry server (prod) (v0.8.0)"
 ```
+_Note: if you didn't pass `DnsZone` and `DnsPrefix`, you'll want to set up a CNAME or Alias for the created ELB_
 
 To use the new registry, just generate a new `~/.dockercfg` by hand ([details](http://docs.docker.io/use/workingwithrepository/#authentication-file)) or via `docker login`:
 ```console
