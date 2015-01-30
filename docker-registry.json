@@ -35,11 +35,16 @@
     "DockerImage" : {
       "Description" : "Path of the Docker Registry image to use (format: '[<registry>[:<port>]/]<repository>[:<version>]')",
       "Type" : "String",
-      "Default" : "registry:0.7.3"
+      "Default" : "registry:0.9.1"
     },
     "S3Bucket" : {
       "Description" : "Bucket to use for Docker images (e.g., 'mycompany-docker')",
       "Type" : "String"
+    },
+    "S3Region" : {
+      "Description" : "S3 Region in which the bucket resides",
+      "Type" : "String",
+      "Default" : "us-east-1"
     },
     "SslCertificate" : {
       "Description" : "ARN of an existing SSL certificate on AWS (e.g., 'arn:aws:iam::123456789:server-certificate/docker.mycompany.com')",
@@ -76,8 +81,8 @@
   "Conditions" : {
     "UseAllAvailabilityZones" : {"Fn::Equals" : [{ "Fn::Join" : ["", {"Ref" : "AvailabilityZones"} ]}, ""]},
     "CreateDnsEntry" : {"Fn::And": [
-      {"Fn:Not": [{"Fn::Equals" : [{"Ref" : "DnsPrefix"}, ""]}]},
-      {"Fn:Not": [{"Fn::Equals" : [{"Ref" : "DnsZone"}, ""]}]},
+      {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "DnsPrefix"}, ""]}]},
+      {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "DnsZone"}, ""]}]}
     ]}
   },
 
@@ -182,16 +187,16 @@
               "/opt/docker-registry/config.yaml" : {
                 "content" : { "Fn::Join" : ["\n", [
                   "prod:",
+                  "    standalone: true",
                   "    loglevel: warn",
                   "    storage: s3",
                   "    s3_access_key: {{access_key}}",
                   "    s3_secret_key: {{secret_key}}",
+                  "    s3_region: {{s3_region}}",
                   "    s3_bucket: {{s3_bucket}}",
                   "    boto_bucket: {{s3_bucket}}",
                   "    storage_path: /srv/docker",
                   "    secret_key: {{magic_string}}",
-                  "    standalone: true",
-                  "    disable_token_auth: true",
                   "    search_backend: sqlalchemy",
                   "    sqlalchemy_index_database: sqlite:////tmp/docker-registry.db",
                   ""
@@ -200,6 +205,7 @@
                   "access_key"  : { "Ref" : "HostKeys" },
                   "secret_key"  : { "Fn::GetAtt" : ["HostKeys", "SecretAccessKey"]},
                   "s3_bucket"   : { "Ref" : "S3Bucket"},
+                  "s3_region"   : { "Ref" : "S3Region"},
                   "magic_string": "fL3YHeP1cmCHH5FWm1PKaO7cdo0VXkabAgiSEestXYZDgAiQcDCsTiWpOaukB1e9"
                 },
                 "mode"    : "000700",
@@ -215,17 +221,28 @@
                   "server {",
                   "  listen 80;",
                   "",
-                  "  proxy_set_header Host       $http_host;   # required for docker client's sake",
-                  "  proxy_set_header X-Real-IP  $remote_addr; # pass on real client's IP",
-                  "  ",
+                  "  proxy_set_header  Host           $http_host;   # required for docker client's sake",
+                  "  proxy_set_header  X-Real-IP      $remote_addr; # pass on real client's IP",
+                  "  proxy_set_header  Authorization  \"\"; # see https://github.com/dotcloud/docker-registry/issues/170",
+                  "  proxy_read_timeout               900;",
+                  "",
                   "  client_max_body_size 0; # disable any limits to avoid HTTP 413 for large image uploads",
                   "",
+                  "  # required to avoid HTTP 411: see Issue #1486 (https://github.com/docker/docker/issues/1486)",
                   "  chunked_transfer_encoding on;",
-                  "  ",
+                  "",
                   "  location / {",
-                  "    auth_basic \"Restricted\";",
-                  "    auth_basic_user_file /opt/docker-registry/htpasswd;",
-                  "    proxy_pass http://docker-registry;",
+                  "    auth_basic                       \"Restricted\";",
+                  "    auth_basic_user_file             /opt/docker-registry/htpasswd;",
+                  "    proxy_pass                       http://docker-registry;",
+                  "  }",
+                  "",
+                  "  location /_ping {",
+                  "    auth_basic off;",
+                  "  }",
+                  "",
+                  "  location /v1/_ping {",
+                  "    auth_basic off;",
                   "  }",
                   "",
                   "  location /health {",
