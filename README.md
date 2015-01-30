@@ -1,7 +1,7 @@
 CloudFormation template for an S3-backed private [Docker Registry](https://github.com/dotcloud/docker-registry) with password protection and HTTPS.
 
 Prerequisites:
-* Trusted SSL certificate for this address (self-signed certs are [not supported](https://github.com/dotcloud/docker/pull/2687) by docker unless added to the system keystore)
+* SSL certificate (if it's untrusted, you'll need to add it to the system keystore or pass use Docker's `--insecure` option)
 * (Optional) Route 53 hosted zone for the desired registry address (e.g., `mycompany.com` for `docker.mycompany.com`)
 
 ## Overview
@@ -36,7 +36,7 @@ Inbound rules are at your discretion, but you may want to include access to:
 * `5000 [tcp]` - Private registry port (troubleshooting only)
 
 ### 3. Upload an SSL certificate
-Upload an SSL certificate to IAM ([instructions](http://docs.aws.amazon.com/IAM/latest/UserGuide/InstallCert.html)). This certificate must be valid for the registry DNS address and be trusted by the clients (if self-signed, you must add it to the clients' keystores).
+Upload an SSL certificate to IAM ([instructions](http://docs.aws.amazon.com/IAM/latest/UserGuide/InstallCert.html)). This certificate must be valid for the registry DNS address and be trusted by the clients (if self-signed, you must add it to the clients' keystores or use Docker's `--insecure` flag).
 
 Once uploaded, you'll need the ARN for this certificate. You can do this via [aws-cli](https://github.com/aws/aws-cli):
 ```console
