@@ -24,7 +24,7 @@ Note that this template must be used with Amazon VPC. New AWS accounts automatic
 
 ### 1. Clone the repository
 ```bash
-git clone git@github.com:thefactory/cloudformation-docker-registry.git
+git clone https://github.com/mbabineau/cloudformation-docker-registry.git
 ```
 
 ### 2. Create an Admin security group
