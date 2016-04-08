@@ -35,7 +35,7 @@
     "DockerImage" : {
       "Description" : "Path of the Docker Registry image to use (format: '[<registry>[:<port>]/]<repository>[:<version>]')",
       "Type" : "String",
-      "Default" : "registry:0.9.1"
+      "Default" : "registry:2"
     },
     "S3Bucket" : {
       "Description" : "Bucket to use for Docker images (e.g., 'mycompany-docker')",
