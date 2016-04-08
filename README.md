@@ -12,7 +12,7 @@ Registry servers are launched in an auto scaling group using public AMIs running
 
 The servers register with an Elastic Load Balancer, an Alias for which is created in Route 53 (if you pass `DnsZone` and `DnsPrefix`). When tagging repositories, use this (or a higher-level record) instead of the ELB's raw DNS record as your registry address instead (e.g., `docker.mycompany.com/myimage` instead of `mystack-do-ElasticL-AJK...elb.amazonaws.com/myimage`).
 
-The ELB listens on HTTPS using the specified SSL cert. Each registry server is password-protected by an nginx proxy. The ELB performs health checks against `/v1/_ping`. If an instance fails these health checks for several minutes, the ASG will terminate the instance and bring up a replacement.
+The ELB listens on HTTPS using the specified SSL cert. Each registry server is password-protected by an nginx proxy. The ELB performs health checks against `/v2/`. If an instance fails these health checks for several minutes, the ASG will terminate the instance and bring up a replacement.
 
 The registry is run via a Docker image specified as a Parameter. You can use the default or provide your own.
 
