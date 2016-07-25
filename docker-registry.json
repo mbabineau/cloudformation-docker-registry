@@ -1,4 +1,3 @@
-
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
 
@@ -35,7 +34,7 @@
     "DockerImage" : {
       "Description" : "Path of the Docker Registry image to use (format: '[<registry>[:<port>]/]<repository>[:<version>]')",
       "Type" : "String",
-      "Default" : "registry:0.9.1"
+      "Default" : "registry:2"
     },
     "S3Bucket" : {
       "Description" : "Bucket to use for Docker images (e.g., 'mycompany-docker')",
@@ -89,28 +88,28 @@
   "Mappings" : {
     "RegionMap" : {
       "us-east-1" : {
-        "AMI" : "ami-86fabdee"
+        "AMI" : "ami-88d9539f"
       },
       "us-west-1" : {
-        "AMI" : "ami-bc4951f9"
+        "AMI" : "ami-"
       },
       "us-west-2" : {
-        "AMI" : "ami-49411979"
+        "AMI" : "ami-978f40f7"
       },
       "eu-west-1" : {
-        "AMI" : "ami-1566ea62"
+        "AMI" : "ami-632b4610"
       },
       "ap-southeast-1" : {
-        "AMI" : "ami-787b512a"
+        "AMI" : "ami-f9ab749a"
       },
       "ap-southeast-2" : {
-        "AMI" : "ami-c35c28f9"
+        "AMI" : "ami-fc9cb69f"
       },
       "ap-northeast-1" : {
-        "AMI" : "ami-7a98817b"
+        "AMI" : "ami-e6689387"
       },
       "sa-east-1" : {
-        "AMI" : "ami-bd6ad6a0"
+        "AMI" : "ami-c0fc6bac"
       }
     }
   },
@@ -184,27 +183,22 @@
             "files" : {
               "/opt/docker-registry/config.yaml" : {
                 "content" : { "Fn::Join" : ["\n", [
-                  "prod:",
-                  "    standalone: true",
-                  "    loglevel: warn",
-                  "    storage: s3",
-                  "    s3_access_key: {{access_key}}",
-                  "    s3_secret_key: {{secret_key}}",
-                  "    s3_region: {{s3_region}}",
-                  "    s3_bucket: {{s3_bucket}}",
-                  "    boto_bucket: {{s3_bucket}}",
-                  "    storage_path: /srv/docker",
-                  "    secret_key: {{magic_string}}",
-                  "    search_backend: sqlalchemy",
-                  "    sqlalchemy_index_database: sqlite:////tmp/docker-registry.db",
+                  "version: 0.1",
+                  "storage:",
+                  "    s3:",
+                  "        region: {{s3_region}}",
+                  "        bucket: {{s3_bucket}}",
+                  "        accesskey: {{access_key}}",
+                  "        secretkey: {{secret_key}}",
+                  "http:",
+                  "    addr: :5000",
                   ""
                 ]]},
                 "context" : {
                   "access_key"  : { "Ref" : "HostKeys" },
                   "secret_key"  : { "Fn::GetAtt" : ["HostKeys", "SecretAccessKey"]},
                   "s3_bucket"   : { "Ref" : "S3Bucket"},
-                  "s3_region"   : { "Ref" : "S3Region"},
-                  "magic_string": "fL3YHeP1cmCHH5FWm1PKaO7cdo0VXkabAgiSEestXYZDgAiQcDCsTiWpOaukB1e9"
+                  "s3_region"   : { "Ref" : "S3Region"}
                 },
                 "mode"    : "000700",
                 "owner"   : "root",
@@ -235,16 +229,8 @@
                   "    proxy_pass                       http://docker-registry;",
                   "  }",
                   "",
-                  "  location /_ping {",
-                  "    auth_basic off;",
-                  "  }",
-                  "",
-                  "  location /v1/_ping {",
-                  "    auth_basic off;",
-                  "  }",
-                  "",
                   "  location /health {",
-                  "    proxy_pass http://docker-registry/v1/_ping;",
+                  "    proxy_pass http://docker-registry/v2/;",
                   "  }",
                   "}"
                 ]]},
@@ -297,8 +283,7 @@
           "runit-service create docker-registry docker run --rm",
           "   -p 5000:5000",
           "   -v /opt/docker-registry:/registry-conf",
-          "   -e DOCKER_REGISTRY_CONFIG=/registry-conf/config.yaml",
-          "   -e SETTINGS_FLAVOR=prod",
+          "   -e REGISTRY_CONFIGURATION_PATH=/registry-conf/config.yaml",
           "   ", { "Ref": "DockerImage" }, "|| error_exit 'Failed to launch Docker container'\n",
           "runit-service enable docker-registry\n",
 
