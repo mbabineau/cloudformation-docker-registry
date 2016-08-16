@@ -192,6 +192,11 @@
                   "        secretkey: {{secret_key}}",
                   "http:",
                   "    addr: :5000",
+                  "health:",
+                  "  storagedriver:",
+                  "    enabled: true",
+                  "    interval: 10s",
+                  "    threshold: 3",
                   ""
                 ]]},
                 "context" : {
@@ -282,8 +287,7 @@
           "docker pull ", { "Ref": "DockerImage" }, "\n",
           "runit-service create docker-registry docker run --rm",
           "   -p 5000:5000",
-          "   -v /opt/docker-registry:/registry-conf",
-          "   -e REGISTRY_CONFIGURATION_PATH=/registry-conf/config.yaml",
+          "   -v /opt/docker-registry:/etc/docker/registry",
           "   ", { "Ref": "DockerImage" }, "|| error_exit 'Failed to launch Docker container'\n",
           "runit-service enable docker-registry\n",
 
