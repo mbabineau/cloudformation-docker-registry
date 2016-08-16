@@ -1,0 +1,146 @@
+{
+  "variables": {
+    "docker_version": "1.11.2-0~xenial",
+    "cfn_tools_url": "https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz"
+  },
+
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "region": "ap-northeast-1",
+      "source_ami": "ami-b7d829d6",
+      "instance_type": "m3.medium",
+      "ssh_username": "ubuntu",
+      "ami_name": "mumoshu-ubuntu-16.04-base-hvm-{{isotime | clean_ami_name}}",
+      "ami_description": "Ubuntu 16.04 LTS with Docker and Runit",
+      "ami_regions": ["us-east-1", "us-west-1", "us-west-2", "ap-southeast-1", "ap-southeast-2", "ap-northeast-1", "sa-east-1", "eu-west-1"],
+      "ami_groups": "all",
+      "tags": {
+        "os:distribution": "Ubuntu",
+        "os:release": "16.04 LTS",
+        "docker:version": "{{user `docker_version`}}"
+      }
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "# Wait before running the update. If we're too quick, we'll only get a partial package list",
+        "sleep 10",
+        "sudo apt-get update",
+
+        "sudo apt-get -y install python-setuptools ntp",
+        "sudo easy_install pip"
+      ]
+    },
+    {
+      "type": "shell",
+      "only": ["amazon-ebs"],
+      "inline": [
+        "# CloudFormation bootstrap tools",
+        "sudo wget -O /root/aws-cfn-bootstrap-latest.tar.gz {{user `cfn_tools_url`}}",
+        "sudo mkdir -p /root/aws-cfn-bootstrap-latest",
+        "sudo tar xvfz /root/aws-cfn-bootstrap-latest.tar.gz --strip-components=1 -C /root/aws-cfn-bootstrap-latest",
+        "sudo easy_install /root/aws-cfn-bootstrap-latest/",
+        "sudo rm -rf /root/aws-cfn-bootstrap-latest /root/aws-cfn-bootstrap-latest.tar.gz"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "# Docker (use Docker repo so we can get recent versions)",
+        "sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D",
+        "sudo sh -c 'echo deb https://apt.dockerproject.org/repo ubuntu-xenial main > /etc/apt/sources.list.d/docker.list'",
+        "sudo apt-get update",
+        "apt-cache policy docker-engine",
+        "apt-cache madison docker-engine",
+        "sudo apt-get -y install linux-image-extra-$(uname -r)",
+        "sudo apt-get -y install docker-engine={{user `docker_version`}}"
+      ]
+    },
+
+    {
+      "type": "shell",
+      "inline": [
+        "# Install logstash",
+        "sudo curl -o /tmp/logstash.tar.gz https://download.elasticsearch.org/logstash/logstash/logstash-1.4.2.tar.gz",
+        "sudo mkdir /opt/logstash",
+        "sudo tar zxf /tmp/logstash.tar.gz -C /opt/logstash --strip=1",
+        "sudo rm -f /tmp/logstash.tgz",
+        "sudo /opt/logstash/bin/plugin install contrib"
+      ]
+    },
+
+    {
+      "type": "shell",
+      "inline": [
+        "# Runit supervisor",
+        "sudo apt-get install -y runit",
+
+        "# Start runsvdir on boot -- needed for runit to work",
+        "cat << EOF | sudo tee /etc/init/runsvdir.conf",
+        "start on runlevel [2345]",
+        "stop on runlevel [016]",
+        "respawn",
+        "kill signal HUP",
+        "exec /usr/sbin/runsvdir-start",
+        "EOF"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "include/docker.logrotate",
+      "destination": "/tmp/docker.logrotate"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo mv /tmp/docker.logrotate /etc/logrotate.d/docker"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "include/runit-service",
+      "destination": "/tmp/runit-service"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo mv /tmp/runit-service /usr/local/bin/runit-service",
+        "sudo chmod +x /usr/local/bin/runit-service"
+      ]
+    },
+
+    {
+      "type": "file",
+      "source": "include/limits.conf",
+      "destination": "/tmp/limits.conf"
+    },
+    {
+      "type": "file",
+      "source": "include/sysctld.network.conf",
+      "destination": "/tmp/sysctld.network.conf"
+    },
+    {
+      "type": "file",
+      "source": "include/pamd.common-session",
+      "destination": "/tmp/pamd.common-session"
+    },
+    {
+      "type": "file",
+      "source": "include/pamd.common-session-noninteractive",
+      "destination": "/tmp/pamd.common-session-noninteractive"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo mv /tmp/limits.conf /etc/security/limits.conf",
+        "sudo mv /tmp/sysctld.network.conf /etc/sysctl.d/60-network.conf",
+        "sudo mv /tmp/pamd.common-session /etc/pam.d/common-session",
+        "sudo mv /tmp/pamd.common-session-noninteractive /etc/pam.d/common-session-noninteractive"
+      ]
+    }
+  ]
+}

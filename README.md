@@ -1,4 +1,12 @@
-CloudFormation template for an S3-backed private [Docker Registry](https://github.com/dotcloud/docker-registry) with password protection and HTTPS.
+CloudFormation template for an S3-backed private [Docker Registry v2](https://github.com/docker/distribution) with password protection and HTTPS.
+
+Forked from [mbabineau/cloudformation-docker-registry](https://github.com/mbabineau/cloudformation-docker-registry). Also thanks to [mimkepii's initial attempt to support v2](https://github.com/mbabineau/cloudformation-docker-registry/issues/1#issuecomment-129952389).
+
+Changes on top of mbabineau's work includes:
+
+* Ubuntu 16.04 LTS instead of 14.04 LTS
+* Docker 1.11.2 instead of 1.5.0
+* Docker Regisry v2 instead of v1
 
 Prerequisites:
 * SSL certificate (if it's untrusted, you'll need to add it to the system keystore or pass use Docker's `--insecure` option)
@@ -8,11 +16,11 @@ Prerequisites:
 
 This template bootstraps a private Docker Registry.
 
-Registry servers are launched in an auto scaling group using public AMIs running Ubuntu 14.04 LTS and pre-reloaded with Docker and Runit.  If you wish to use your own image, simply modify `RegionMap` in the template file.
+Registry servers are launched in an auto scaling group using public AMIs running Ubuntu 16.04 LTS Xenial and pre-reloaded with Docker and Runit.  If you wish to use your own image, simply modify `RegionMap` in the template file.
 
 The servers register with an Elastic Load Balancer, an Alias for which is created in Route 53 (if you pass `DnsZone` and `DnsPrefix`). When tagging repositories, use this (or a higher-level record) instead of the ELB's raw DNS record as your registry address instead (e.g., `docker.mycompany.com/myimage` instead of `mystack-do-ElasticL-AJK...elb.amazonaws.com/myimage`).
 
-The ELB listens on HTTPS using the specified SSL cert. Each registry server is password-protected by an nginx proxy. The ELB performs health checks against `/v1/_ping`. If an instance fails these health checks for several minutes, the ASG will terminate the instance and bring up a replacement.
+The ELB listens on HTTPS using the specified SSL cert. Each registry server is password-protected by an nginx proxy. The ELB performs health checks against `/v2/`. If an instance fails these health checks for several minutes, the ASG will terminate the instance and bring up a replacement.
 
 The registry is run via a Docker image specified as a Parameter. You can use the default or provide your own.
 
@@ -84,10 +92,9 @@ aws cloudformation create-stack \
 ```
 
 ### 6. Test your registry
-Once the stack has been provisioned, try calling the registry using credentials associated with one of the auth strings. You should get a text response with the server version:
+Once the stack has been provisioned, try calling the registry using credentials associated with one of the auth strings. You should get a 200 response code:
 ```console
-$ curl -u <user>:<password> https://docker.mycompany.com
-"docker-registry server (prod) (v0.8.0)"
+$ curl -v -u <user>:<password> https://docker.mycompany.com/v2/
 ```
 _Note: if you didn't pass `DnsZone` and `DnsPrefix`, you'll want to set up a CNAME or Alias for the created ELB_
 
